@@ -17,9 +17,9 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     
     grad = np.zeros((d, 1)) # Gradiente
     hess = np.zeros((d, d)) # Hessiano
-    lik = np.zeros((1,1)) # Likelihood
+    lik = 0 # Likelihood
     
-    for i in R_T:
+    for i in range(len(R_T)):
         lik -= ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i]) + np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
         hess += np.matmul(X[i], np.transpose(X[i])) * np.exp(np.dot(beta, X[i]))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
         grad += X[i] * np.exp(np.cross(beta, X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N
