@@ -38,14 +38,16 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
     lik_boa = np.zeros((n, 1))
     gamma_temp = np.zeros((n, 1))
 
-    for t in range(0, n):
+    for t in range(1, n): # la iteración 0 da todo 0 => mata todo
 
         beta_boa = np.matmul(beta, pi_boa)
 
         grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, u, delta, X, beta_boa, R[t])
+        #print(grad_boa[t].shape, hess_boa.shape, lik_boa[t].shape)
 
-        norm_grad_boa = np.linalg.norm(grad_boa) 
-        mu = (np.matmul(np.matmul(np.transpose(grad_boa), hess_boa), grad_boa) / max(1e-9, norm_grad_boa**4)).astype(np.float64)
+        norm_grad_boa = np.linalg.norm(grad_boa[t])
+        algo = np.matmul(np.transpose(grad_boa[t]), hess_boa)
+        mu = (np.matmul(algo, grad_boa[t]) / max(1e-9, norm_grad_boa**4)).astype(np.float64)
 
         gamma_t = np.float64(2*((-1/mu)*np.log(1 + mu*norm_grad_boa*D) + norm_grad_boa*D) / max(1e-9, norm_grad_boa * D) ** 2)
         if (max0):
@@ -56,30 +58,41 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
             beta_arr[t, :, i] = beta[:, i]
             gamma_max = max(gamma_t/4, gamma[i])
 
-            grad_hat = np.dot(grad_boa, (1 + gamma_max * np.cross(grad_boa, beta[:, i]- beta_boa))).astype(np.float64)
+            grad_hat = grad_boa[t] * (1 + gamma_max * np.matmul(np.transpose(grad_boa[t]), beta[:, i]- beta_boa))
             grad_boa_hat[t,:,i] = grad_hat
 
             a_inv  = np.full((d,d), a_inv_arr[:,:,i])
             temp = np.matmul(a_inv, grad_hat)
-            a_inv -= np.cross(temp, temp.T)/(1+ np.cross(grad_hat, temp)[0])
+            a_inv -= np.matmul(temp, temp.T)/(1+ np.matmul(grad_hat.T, temp))
             a_inv_arr[:,:,i] = a_inv
             beta[:,i] -= gamma[i]**-1 * np.matmul(a_inv, grad_hat)
 
-            if (np.sqrt(np.cross(np.transpose(beta[:,i]), beta[:,i])[0]) > D):
-                beta[:, i] = generalized_projection(a_inv, beta[:, i], D)
+            print("beta 1")
+            print(beta)
 
-        term1 = np.dot(gamma, (np.cross(grad_boa, beta-np.matmul(beta_boa, np.transpose(np.ones((K, 1)))))))
+            if (np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])) > D):
+                # print(np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])), D)
+                beta[:, i] = generalized_projection(a_inv, beta[:, i], D, d)
+
+            print("beta 2")
+            print(beta)
+
+        term1 = np.dot(gamma, (np.matmul(np.transpose(grad_boa[t]), beta-np.matmul(beta_boa, np.transpose(np.ones((K, 1)))))))
         
         # revisar si es necesario maximum y minimum, o si sirve max y min
         pi_boa2 = np.exp(np.maximum(-100, np.minimum(100, np.log(pi_boa2) - term1 - term1**2)))
         pi_boa2 /= np.sum(pi_boa2)
 
-        gamma_dot_pb2 = np.dot(gamma * pi_boa2)
-        pi_boa = gamma_dot_pb2 / sum(gamma_dot_pb2)
+        #print("dim", np.array([gamma]).shape, pi_boa2.shape)
+        gamma_dot_pb2 = np.array([gamma]).T * pi_boa2
+        #print(gamma_dot_pb2.shape)
+        #print(sum(gamma_dot_pb2))
+        pi_boa = gamma_dot_pb2 / np.sum(gamma_dot_pb2)
 
         if(t < n):
-            beta_boa_arr[t+1] = np.matmul(beta, pi_boa)
-            pi_boa_arr[t+1] = pi_boa
+            #print(beta.shape, pi_boa.shape)
+            beta_boa_arr[t] = (np.matmul(beta, pi_boa)).flatten()
+            pi_boa_arr[t] = pi_boa.flatten()
     
     return [beta_arr, beta_boa_arr, pi_boa_arr, 
             lik_boa, gamma_temp, grad_boa, grad_boa_hat]
