@@ -28,8 +28,6 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
 
     pi_boa = np.full((K, 1), 1/K)
     pi_boa2 = pi_boa
-    L = np.zeros((K,1))
-    renorm = np.zeros((K, 1))
 
     beta_boa_arr = np.zeros((n, d))
     grad_boa = np.zeros((n, d))
@@ -41,21 +39,26 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
     for t in range(1, n): # la iteración 0 da todo 0 => mata todo
 
         beta_boa = np.matmul(beta, pi_boa)
-
+        print("beta_boa", beta_boa)
         grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, u, delta, X, beta_boa, R[t])
         #print(grad_boa[t].shape, hess_boa.shape, lik_boa[t].shape)
 
         norm_grad_boa = np.linalg.norm(grad_boa[t])
         algo = np.matmul(np.transpose(grad_boa[t]), hess_boa)
-        mu = (np.matmul(algo, grad_boa[t]) / max(1e-9, norm_grad_boa**4)).astype(np.float64)
+        print("norm_grad_boa", norm_grad_boa)
+        print("grad_boa[t]", grad_boa[t])
+        print("algo", algo)
+        mu = np.matmul(algo, grad_boa[t]) / max(1e-9, norm_grad_boa**4)
+        print("mu", mu)
 
-        gamma_t = np.float64(2*((-1/mu)*np.log(1 + mu*norm_grad_boa*D) + norm_grad_boa*D) / max(1e-9, norm_grad_boa * D) ** 2)
+        gamma_t = 2*((-1/mu)*np.log(1 + mu*norm_grad_boa*D) + norm_grad_boa*D) / (max(1e-9, norm_grad_boa * D) ** 2)
         if (max0):
             gamma_t = 0
         gamma_temp[t] = gamma_t
 
         for i in range(0, K):
             beta_arr[t, :, i] = beta[:, i]
+            
             gamma_max = max(gamma_t/4, gamma[i])
 
             grad_hat = grad_boa[t] * (1 + gamma_max * np.matmul(np.transpose(grad_boa[t]), beta[:, i]- beta_boa))
@@ -65,17 +68,19 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
             temp = np.matmul(a_inv, grad_hat)
             a_inv -= np.matmul(temp, temp.T)/(1+ np.matmul(grad_hat.T, temp))
             a_inv_arr[:,:,i] = a_inv
+            
             beta[:,i] -= gamma[i]**-1 * np.matmul(a_inv, grad_hat)
 
-            print("beta 1")
-            print(beta)
+            # print("beta 1")
+            # print(beta)
 
             if (np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])) > D):
                 # print(np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])), D)
+                print("Entro a generalized projection")
                 beta[:, i] = generalized_projection(a_inv, beta[:, i], D, d)
 
-            print("beta 2")
-            print(beta)
+            # print("beta 2")
+            # print(beta)
 
         term1 = np.dot(gamma, (np.matmul(np.transpose(grad_boa[t]), beta-np.matmul(beta_boa, np.transpose(np.ones((K, 1)))))))
         

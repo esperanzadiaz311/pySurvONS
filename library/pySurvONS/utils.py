@@ -18,16 +18,22 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     grad = np.zeros((d, 1)) # Gradiente
     hess = np.zeros((d, d)) # Hessiano
     lik = 0 # Likelihood
-    
+
+    print("beta", beta)
+    print("t",t)
+    print("X", X)
     for i in R_T:
+        print("HOLA soy el for")
         xi = np.array([X[i]])
-        lik -= ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i]) + np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
-        hess += np.matmul(xi, np.transpose(xi))[0,0] * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
-        grad += (xi * np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
+        lik = lik - ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i]) + np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
+        print("lik", lik)
+        hess = hess + np.matmul(xi, np.transpose(xi)) * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
+        print("hess", hess)
+        grad = grad + (xi * np.exp(np.matmul(np.transpose(beta), X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
+        print("grad", grad)
 
         if (t-1 < u[i] and u[i] <= t and delta[i]):
             grad -= xi / N
-
     return grad.flatten(), hess, lik
 
 
@@ -45,9 +51,10 @@ def generalized_projection(P, theta, D, d):
 
     if (status != cp.OPTIMAL):
         problem.solve(solver = cp.SCS)
+    print("status", status)
 
     if (status != cp.OPTIMAL):
-        #print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
+        print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
         pass
     print("x.value", x.value)
     return x.value
