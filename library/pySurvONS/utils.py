@@ -19,35 +19,35 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     hess = np.zeros((d, d)) # Hessiano
     lik = 0 # Likelihood
     
-    for i in range(len(R_T)):
-        #R_T = [0, 0, 1, 0, 1, 1]
-        if R_T[i] == 1: # Considerar solo a los individuos que están en riesgo
-            xi = np.array([X[i]])
-            lik -= ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i]) + np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
-            hess += np.matmul(xi, np.transpose(xi))[0,0] * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
-            grad += (xi * np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
+    for i in R_T:
+        xi = np.array([X[i]])
+        lik -= ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i]) + np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
+        hess += np.matmul(xi, np.transpose(xi))[0,0] * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
+        grad += (xi * np.exp(np.matmul(np.transpose(beta), X[i])) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
 
-            if (t-1 < u[i] and u[i] <= t and delta[i]):
-                grad -= xi / N
+        if (t-1 < u[i] and u[i] <= t and delta[i]):
+            grad -= xi / N
 
     return grad.flatten(), hess, lik
 
 
 def generalized_projection(P, theta, D, d):
-    x = cp.Variable(d)
-    algo = cp.MatrixFrac(x-theta, P)
-    print(x-theta)
-    objective = cp.Minimize(algo)
+    x = cp.Variable(d) # dimensión (d,)
+
+    matrix_x_theta = cp.matrix_frac(x-theta, P)
+    objective = cp.Minimize(matrix_x_theta)
+
     constraint = [cp.norm2(x) <= D]
     problem = cp.Problem(objective, constraint)
-    problem.solve()
+    
     status = problem.status
     print("status", status)
-    if (status != 'optimal'):
+
+    if (status != cp.OPTIMAL):
         problem.solve(solver = cp.SCS)
 
-    if (status != 'optimal'):
-        print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
+    if (status != cp.OPTIMAL):
+        #print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
         pass
-    #print("x.value", x.value)
+    print("x.value", x.value)
     return x.value
