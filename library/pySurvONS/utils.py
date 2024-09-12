@@ -20,9 +20,16 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     lik = 0 # Likelihood
 
     print("beta (instgrad)", beta)
+    print("R_T:", R_T)
+    print("t:", t)
     for i in R_T:
         print("HOLA soy el for")
         xi = np.array([X[i]])
+        print("t0[i]: ", t0[i])
+        print("u[i]: ", u[i])
+        print("min(t,u[i]): ", min(t,u[i]))
+        print("max(t0[i],t-1): ", max(t0[i],t-1))
+        print("max(0, min(t,u[i]) - max(t0[i],t-1)): ", max(0, min(t,u[i]) - max(t0[i],t-1)))
         lik = lik - ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i])[0] + np.exp(np.matmul(np.transpose(beta), X[i]))[0] * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
         print("lik", lik)
         hess = hess + np.matmul(xi, np.transpose(xi)) * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
