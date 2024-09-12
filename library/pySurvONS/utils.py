@@ -1,5 +1,6 @@
 import numpy as np
 import cvxpy as cp
+from analyzer import tech_support
 
 # Función auxiliar que retorna el Likelihood, Gradiente y Hessiano 
 
@@ -44,13 +45,15 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
 
 def generalized_projection(P, theta, D, d):
     x = cp.Variable(d) # dimensión (d,)
-
-    matrix_x_theta = cp.matrix_frac(x-theta, P)
+    #P_inverted = np.linalg.inv(P)
+    matrix_x_theta = cp.matrix_frac(x-theta, P) # min (x-theta) P^-1 (x-theta)
+    #matrix_x_theta = cp.quad_form(x-theta, P_inverted)
     objective = cp.Minimize(matrix_x_theta)
 
-    constraint = [cp.norm2(x) <= D]
+    constraint = [cp.norm(x,2) <= D]
     problem = cp.Problem(objective, constraint)
     
+    problem.solve()
     status = problem.status
     print("status", status)
 
@@ -63,3 +66,4 @@ def generalized_projection(P, theta, D, d):
         pass
     print("x.value", x.value)
     return x.value
+

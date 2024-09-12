@@ -70,10 +70,14 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
 
             grad_hat = grad_boa[t] * (1 + gamma_max * np.matmul(np.transpose(grad_boa[t]), beta[:, i]- beta_boa))
             grad_boa_hat[t,:,i] = grad_hat
-
+            
+            print("a_inv_arr[:,:,i]: ", a_inv_arr[:,:,i])
             a_inv  = np.full((d,d), a_inv_arr[:,:,i])
-            temp = np.matmul(a_inv, grad_hat)
-            a_inv -= np.matmul(temp, temp.T)/(1+ np.matmul(grad_hat.T, temp))
+            temp = a_inv @ grad_hat
+            print("temp: ", temp)
+            temp2 = np.outer(temp, temp.T) # debería ser matriz simétrica -> (1,3) == (3,1) y su diagonal con valores distintos
+            print("temp2", temp2)
+            a_inv = a_inv - (temp2/(1+ np.matmul(grad_hat.T, temp)))
             a_inv_arr[:,:,i] = a_inv
             
             print("a_inv: ", a_inv)
@@ -86,6 +90,8 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
             if (np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])) > D):
                 # print(np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])), D)
                 print("Entro a generalized projection")
+                print("beta[:, i]: ", beta[:, i])
+                print("a_inv: ", a_inv)
                 beta[:, i] = generalized_projection(a_inv, beta[:, i], D, d)
 
             # print("beta 2")
