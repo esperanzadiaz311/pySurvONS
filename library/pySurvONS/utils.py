@@ -1,6 +1,5 @@
 import numpy as np
 import cvxpy as cp
-from analyzer import tech_support
 
 # Función auxiliar que retorna el Likelihood, Gradiente y Hessiano 
 
@@ -20,23 +19,11 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     hess = np.zeros((d, d)) # Hessiano
     lik = 0 # Likelihood
 
-    print("beta (instgrad)", beta)
-    print("R_T:", R_T)
-    print("t:", t)
     for i in R_T:
-        print("HOLA soy el for")
         xi = np.array([X[i]])
-        print("t0[i]: ", t0[i])
-        print("u[i]: ", u[i])
-        print("min(t,u[i]): ", min(t,u[i]))
-        print("max(t0[i],t-1): ", max(t0[i],t-1))
-        print("max(0, min(t,u[i]) - max(t0[i],t-1)): ", max(0, min(t,u[i]) - max(t0[i],t-1)))
         lik = lik - ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i])[0] + np.exp(np.matmul(np.transpose(beta), X[i]))[0] * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
-        print("lik", lik)
         hess = hess + np.matmul(xi, np.transpose(xi)) * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
-        print("hess", hess)
         grad = grad + (xi * np.exp(np.matmul(np.transpose(beta), X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
-        print("grad", grad)
 
         if (t-1 < u[i] and u[i] <= t and delta[i]):
             grad -= xi / N
@@ -55,15 +42,15 @@ def generalized_projection(P, theta, D, d):
     
     problem.solve()
     status = problem.status
-    print("status", status)
+    #print("status", status)
 
     if (status != cp.OPTIMAL):
         problem.solve(solver = cp.SCS)
-    print("status", status)
+    #print("status", status)
 
     if (status != cp.OPTIMAL):
         print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
         pass
-    print("x.value", x.value)
+    #print("x.value", x.value)
     return x.value
 
