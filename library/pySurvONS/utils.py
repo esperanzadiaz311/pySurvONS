@@ -20,13 +20,14 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
     lik = 0 # Likelihood
 
     for i in R_T:
-        xi = np.array([X[i]])
+        xi = X[i]
         lik = lik - ((t-1 < u[i]) * (u[i] <= t) * delta[i] * np.matmul(np.transpose(beta), X[i])[0] + np.exp(np.matmul(np.transpose(beta), X[i]))[0] * max(0, min(t,u[i]) - max(t0[i],t-1))) / N
-        hess = hess + np.matmul(xi, np.transpose(xi)) * np.exp(np.dot(beta, xi))[0] * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
-        grad = grad + (xi * np.exp(np.matmul(np.transpose(beta), X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N).T
-
+        hess = hess + np.outer(xi, np.transpose(xi)) * np.exp(np.dot(beta.flatten(), xi)) * max(0, min(t, u[i]) - max(t0[i], t-1)) / N
+        grad = grad + (xi * np.exp(np.matmul(np.transpose(beta), X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N)[:,np.newaxis]
+        
         if (t-1 < u[i] and u[i] <= t and delta[i]):
-            grad -= xi / N
+            print(grad.shape)
+            grad = grad - (xi / N)[:,np.newaxis]
     return grad.flatten(), hess, lik
 
 
