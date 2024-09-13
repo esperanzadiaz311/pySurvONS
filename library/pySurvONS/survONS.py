@@ -84,5 +84,15 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
             beta_boa_arr[t] = (np.matmul(beta, pi_boa)).flatten()
             pi_boa_arr[t] = pi_boa.flatten()
     
-    return [beta_arr, beta_boa_arr, pi_boa_arr, 
-            lik_boa, gamma_temp, grad_boa, grad_boa_hat]
+    return {"beta_arr": beta_arr, "beta_boa_arr": beta_boa_arr, "pi_boa_arr": pi_boa_arr, 
+            "lik_boa": lik_boa, "gamma_temp": gamma_temp, "grad_boa": grad_boa, 
+            "grad_boa_hat": grad_boa_hat}
+
+
+def hazard(xi, beta, t, t0):
+    return np.exp(np.matmul(beta.T, xi)) * (t >= t0)
+
+def survive(xi, beta, t, t0):
+    if (t < t0):
+        return 1
+    return np.exp(-1 * np.exp(np.matmul(beta.T, xi)) * (t - t0))
