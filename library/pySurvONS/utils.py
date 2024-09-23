@@ -40,17 +40,16 @@ def generalized_projection(P, theta, D, d):
     constraint = [cp.norm(x,2) <= D]
     problem = cp.Problem(objective, constraint)
     
-    problem.solve(solver = cp.SCS)
+    problem.solve()
     status = problem.status
     #print("status", status)
 
     if (status != cp.OPTIMAL):
-        problem.solve()
+        problem.solve(solver = cp.SCS)
     #print("status", status)
 
     if (status != cp.OPTIMAL):
         print(f"Generalized projection error: optimization is not optimal and ends with status {status}", x.value)
-        pass
     #print("x.value", x.value)
     return x.value
 
