@@ -26,7 +26,6 @@ def instgrad(t, t0, u, delta, X, beta, R_T) -> list:
         grad = grad + (xi * np.exp(np.matmul(np.transpose(beta), X[i])[0]) * max(0, min(t,u[i]) - max(t0[i], t-1)) / N)[:,np.newaxis]
         
         if (t-1 < u[i] and u[i] <= t and delta[i]):
-            print(grad.shape)
             grad = grad - (xi / N)[:,np.newaxis]
     return grad.flatten(), hess, lik
 
@@ -41,12 +40,12 @@ def generalized_projection(P, theta, D, d):
     constraint = [cp.norm(x,2) <= D]
     problem = cp.Problem(objective, constraint)
     
-    problem.solve()
+    problem.solve(solver = cp.SCS)
     status = problem.status
     #print("status", status)
 
     if (status != cp.OPTIMAL):
-        problem.solve(solver = cp.SCS)
+        problem.solve()
     #print("status", status)
 
     if (status != cp.OPTIMAL):

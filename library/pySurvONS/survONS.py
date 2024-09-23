@@ -37,7 +37,7 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
     gamma_temp = np.zeros((n, 1))
 
     for t in range(1, n): # la iteración 0 da todo 0 => mata todo
-        print(f"iteracion {t}")
+        #print(f"iteracion {t}")
         beta_boa = np.matmul(beta, pi_boa)
         grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, u, delta, X, beta_boa, R[t])
 
@@ -45,7 +45,7 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
         algo = np.matmul(np.transpose(grad_boa[t]), hess_boa)
         mu = np.matmul(algo, grad_boa[t]) / max(1e-9, norm_grad_boa**4)
 
-        gamma_t = 2*((-1/mu)*np.log(1 + mu*norm_grad_boa*D) + norm_grad_boa*D) / (max(1e-9, norm_grad_boa * D) ** 2)
+        gamma_t = 2*((-1/max(1e-9, mu))*np.log(1 + mu*norm_grad_boa*D) + norm_grad_boa*D) / (max(1e-9, norm_grad_boa * D) ** 2)
         if (max0):
             gamma_t = 0
         gamma_temp[t] = gamma_t
@@ -71,14 +71,14 @@ def surv_ons(t0, u, delta, X, D, gamma, n, epsilon, R, max0 = False):
             if (np.sqrt(np.matmul(np.transpose(beta[:,i]), beta[:,i])) > D):
                 beta[:, i] = generalized_projection(a_inv, beta[:, i], D, d)
 
-        term1 = np.dot(gamma, (np.matmul(np.transpose(grad_boa[t]), beta-np.matmul(beta_boa, np.transpose(np.ones((K, 1)))))))
-        
-        # revisar si es necesario maximum y minimum, o si sirve max y min -> sirve maximum
+        term1 = (gamma * (np.matmul(np.transpose(grad_boa[t]), beta-np.matmul(beta_boa, np.transpose(np.ones((K, 1)))))))[..., np.newaxis]
+
         pi_boa2 = np.exp(np.maximum(-100, np.minimum(100, np.log(pi_boa2) - term1 - term1**2)))
         pi_boa2 /= np.sum(pi_boa2)
 
         gamma_dot_pb2 = np.array([gamma]).T * pi_boa2
         pi_boa = gamma_dot_pb2 / np.sum(gamma_dot_pb2)
+
 
         if(t < n):
             beta_boa_arr[t] = (np.matmul(beta, pi_boa)).flatten()
@@ -95,4 +95,4 @@ def hazard(xi, beta, t, t0):
 def survive(xi, beta, t, t0):
     if (t < t0):
         return 1
-    return np.exp(-1 * np.exp(np.matmul(beta.T, xi)) * (t - t0))
+    return np.exp(-1 * np.exp(np.matmul(beta.T, xi)) * (t - t0))[0]
