@@ -150,11 +150,11 @@ class SurvONS():
     # i: individuo a predecir
     # t: tiempo en el que se quiere ver la 
     #    probabilidad de supervivencia
-    def predict(self, i: int, t: int) -> float:
+    def predict(self, i: int, t: int, t0: int=0) -> float:
         if not self.trained:
             print("Train the model before doing predictions")
             return
-        return self.__survive(self.X[i], self.t0[i], t)
+        return self.__survive(self.X[i], t0, t)
 
     # Grafica la probabilidad de supervivencia de un grupo de
     # individuos en un intervalo de tiempo
