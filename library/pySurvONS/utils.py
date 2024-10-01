@@ -53,3 +53,15 @@ def generalized_projection(P, theta, D, d):
     #print("x.value", x.value)
     return x.value
 
+def date_discretization(dates) -> np.ndarray[int]:
+    pass
+
+def get_censored_values(values, max_value) -> np.ndarray[bool]:
+    
+    cens = np.ndarray((len(values),), dtype=bool)
+
+    for i in range(len(values)):
+        leq = (values[i] < max_value)
+        cens[i] = leq
+
+    return cens
