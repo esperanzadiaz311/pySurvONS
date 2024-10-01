@@ -6,32 +6,30 @@ from utils import instgrad, generalized_projection
 # Implementación en Python de SurvONS
 
 class SurvONS():
-    
-    # x: DataFrame de Pandas con los vectores de características de cada uno de los individuos
-    # t0: vector de tiempos iniciales
-    # tf: vector de tiempos finales
-    # censored: vector de booleanos que indica
-    #           si un individuo fue censurado
-    def __init__(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray,
-                 censored: np.ndarray[bool]) -> None:
+       
+    def __init__(self) -> None:
         self.trained = False
         self.beta = np.zeros((1,))
-        self.X = x.to_numpy()
-        self.t0 = t0
-        self.tf = tf
-        self.censored = censored
+        # self.X = x.to_numpy()
+        # self.t0 = t0
+        # self.tf = tf
+        # self.censored = censored
     
-
+    # X: vectores de características de cada uno de los individuos
+    # t0: vector de tiempos iniciales
+    # tf: vector de tiempos finales
+    # censored: vector de booleanos que indica si un individuo fue censurado
     # D: Diámetro del espacio de las características
     # gamma: Vector de valores de learning rate
     # n: Número de iteraciones
     # epsilon: Vector de valores de epsilon (epsilon_k = 1/(gamma_k * D) ^2)
     # R: Matriz de los factores de riesgo de los individuos
     # max0: Setea el valor de gamma_temp a 0
-    def __surv_ons(self, D: float, gamma: np.ndarray[float], n: int, 
+    def __surv_ons(self, X: np.ndarray, t0: np.ndarray, tf: np.ndarray,
+                   censored: np.ndarray[bool], D: float, gamma: np.ndarray[float], n: int, 
                    epsilon: np.ndarray[float], R: np.ndarray[np.ndarray[int]], max0: bool = False) -> dict:
-        N = len(self.t0)
-        d = np.shape(self.X)[1]  # entrega la segunda dimensión de X (número de características)
+        N = len(t0)
+        d = np.shape(X)[1]  # entrega la segunda dimensión de X (número de características)
         K = len(gamma)
 
         beta = np.zeros((d, K))
@@ -54,7 +52,7 @@ class SurvONS():
         for t in range(1, n): # la iteración 0 da todo 0 => mata todo
             #print(f"iteracion {t}")
             beta_boa = np.matmul(beta, pi_boa)
-            grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, self.t0, self.tf, self.censored, self.X, beta_boa, R[t])
+            grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, tf, censored, X, beta_boa, R[t])
 
             norm_grad_boa = np.linalg.norm(grad_boa[t])
             algo = np.matmul(np.transpose(grad_boa[t]), hess_boa)
@@ -121,11 +119,13 @@ class SurvONS():
         return np.exp(-1 * np.exp(np.matmul(self.beta.T, xi)) * (t - t0))
 
     # Entrena el modelo de SurvONS a partir de un dataset
-    def train(self) -> None:
+    def train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
-        N = self.X.shape[0] # Número de individuos
-        n_it = int(max(self.tf))
-        d = self.X.shape[1]
+        X = x.to_numpy()
+
+        N = X.shape[0] # Número de individuos
+        n_it = int(max(tf))
+        d = X.shape[1]
 
         gamma = np.arange(np.log(1/n_it), np.log(5*d), 1.2)
         gamma = np.exp(gamma)
@@ -136,12 +136,12 @@ class SurvONS():
         for t in range(0, n_it):
             R[t].append(0)
         for i in range(1, N):
-            t1 = max(1,int(np.floor(self.t0[i])-1)) # tiempo en el que i entra al estudio
-            t2 = min(n_it,int(np.floor(self.tf[i])+1)) # tiempo en el que i sale del estudio
+            t1 = max(1,int(np.floor(t0[i])-1)) # tiempo en el que i entra al estudio
+            t2 = min(n_it,int(np.floor(tf[i])+1)) # tiempo en el que i sale del estudio
             for t in range(t1, t2):
                 R[t].append(i)
 
-        survons = self.__surv_ons(D, gamma, n_it, epsilon, R)
+        survons = self.__surv_ons(X, t0, tf, censored, D, gamma, n_it, epsilon, R)
         self.beta = survons["beta_boa_arr"][n_it-1,:]
         self.trained = True
 
@@ -150,27 +150,39 @@ class SurvONS():
     # i: individuo a predecir
     # t: tiempo en el que se quiere ver la 
     #    probabilidad de supervivencia
-    def predict(self, i: int, t: int) -> float:
+    def predict(self, x: np.ndarray[float], t: int, t0: int = 0) -> float:
         if not self.trained:
             print("Train the model before doing predictions")
             return
-        return self.__survive(self.X[i], self.t0[i], t)
+        return self.__survive(x, t0, t)
 
     # Grafica la probabilidad de supervivencia de un grupo de
     # individuos en un intervalo de tiempo
-    # indivs: lista de individuos a graficar
+    # indivs: matriz de características de los individuos
+    #         a graficar o una lista si es solo
+    #         un individuo
     # t0: tiempo inicial
     # tf: tiempo final
-    def plot(self, indivs: list[int], t0: int, tf: int) -> None:
+    def plot(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: int, tf: int) -> None:
         if not self.trained:
             print("Train the model before doing predictions")
             return
-            
-        survival = [[self.predict(i, t) for t in range(t0, tf+1)] for i in indivs]
         
-        colors = plt.cm.jet(np.linspace(0, 1, len(survival)))
-        for indv in survival:
-            plt.plot([i for i in range(t0, tf+1)], indv, label=f"Individuo {survival.index(indv) + 1}", color=colors[survival.index(indv)])
+        if len(indivs) == 0:
+            return
+        
+        survival = []
+       
+        if isinstance(indivs[0], (np.floating, float)):
+            survival = [self.predict(indivs, t) for t in range(t0, tf+1)]
+            plt.plot([i for i in range(t0, tf+1)], survival)
+        
+        else:
+            survival = [[self.predict(xi, t) for t in range(t0, tf+1)] for xi in indivs]
+            colors = plt.cm.jet(np.linspace(0, 1, len(survival)))
+            for indv in survival:
+                plt.plot([i for i in range(t0, tf+1)], indv, label=f"Individuo {survival.index(indv) + 1}", color=colors[survival.index(indv)])
+        
         plt.title("Tiempo v/s Probabilidad de Supervivencia")
         plt.xlabel("Tiempo")
         plt.ylabel("Probabilidad de Supervivencia")
