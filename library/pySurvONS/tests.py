@@ -1,6 +1,6 @@
 from survONS import SurvONS
 from sksurv.datasets import load_gbsg2
-from utils import get_censored_values
+from utils import get_censored_values, date_discretization
 import numpy as np
 import pandas as pd
 
@@ -33,3 +33,8 @@ indivs = [X[i] for i in range(10)]
 surv.train(x, np.zeros((x.shape[0])), y["time"], y["cens"])
 surv.plot(X[28], 0, 2500)
 surv.plot(indivs, 0, 2500)
+
+dates = np.array(['2024-09-27 08:45', '2024-09-12 09:17', 
+                  '2024-09-15 10:30', '2024-09-12 07:30'])
+discretized = date_discretization(dates)
+print(discretized)

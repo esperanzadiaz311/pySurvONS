@@ -1,5 +1,6 @@
 import numpy as np
 import cvxpy as cp
+import pandas as pd
 
 # Función auxiliar que retorna el Likelihood, Gradiente y Hessiano 
 
@@ -54,7 +55,22 @@ def generalized_projection(P, theta, D, d):
     return x.value
 
 def date_discretization(dates) -> np.ndarray[int]:
-    pass
+    
+    dates_to_datetime = pd.to_datetime(dates).date
+
+    # Ordenar las fechas sin repetir
+    sorted_dates = np.unique(dates_to_datetime)
+
+    # Crear un índice secuencial, empezando desde 0
+    date_to_discrete = {date: i for i, date in enumerate(sorted_dates)}
+
+    # Aplicar el mapeo a la lista original de fecha
+    discretized_dates = np.ndarray((len(dates), ), dtype=int)
+    
+    for i in range(len(dates_to_datetime)):
+        discretized_dates[i] = date_to_discrete[dates_to_datetime[i]]
+
+    return discretized_dates
 
 def get_censored_values(values, max_value) -> np.ndarray[bool]:
     
