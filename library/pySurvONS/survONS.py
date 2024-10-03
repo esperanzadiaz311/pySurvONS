@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from utils import instgrad, generalized_projection
+from lifelines.utils import concordance_index
 
 # Implementación en Python de SurvONS
 
@@ -10,10 +11,7 @@ class SurvONS():
     def __init__(self) -> None:
         self.trained = False
         self.beta = np.zeros((1,))
-        # self.X = x.to_numpy()
-        # self.t0 = t0
-        # self.tf = tf
-        # self.censored = censored
+
     
     # X: vectores de características de cada uno de los individuos
     # t0: vector de tiempos iniciales
@@ -125,6 +123,7 @@ class SurvONS():
 
         N = X.shape[0] # Número de individuos
         n_it = int(max(tf))
+        self.t_max = n_it
         d = X.shape[1]
 
         gamma = np.arange(np.log(1/n_it), np.log(5*d), 1.2)
@@ -155,6 +154,14 @@ class SurvONS():
             print("Train the model before doing predictions")
             return
         return self.__survive(x, t0, t)
+
+    def predict_time(self, x: np.ndarray[float], t0: int = 0) -> float:
+        time = 0
+        for t in range(t0, self.t_max + 1):
+            time += t*self.__hazard(x, t0, t)
+
+        return time
+
 
     # Grafica la probabilidad de supervivencia de un grupo de
     # individuos en un intervalo de tiempo
@@ -189,5 +196,9 @@ class SurvONS():
         #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.show()
 
-    def score(self) -> float:
-        pass
+    # Cálculo de concordance index
+    def score(self, events, X, cens) -> float:
+        
+        preds = [self.predict_time(X[i]) for i in range(len(events))]
+
+        return concordance_index(events, preds, cens)
