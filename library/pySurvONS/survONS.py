@@ -160,6 +160,10 @@ class SurvONS():
     
     def iterative_train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
+        if not self.trained:
+            print("Train the model before doing predictions")
+            return
+
         factors = [0.8, 0.9, 0.95]
 
         X = x.to_numpy()
@@ -228,6 +232,9 @@ class SurvONS():
         return self.__survive(x, t0, t)
 
     def predict_time(self, x: np.ndarray[float], t0: int = 0) -> float:
+        if not self.trained:
+            print("Train the model before doing predictions")
+            return
         time = 0
         probs = 0
         for t in range(t0, self.t_max + 1):
@@ -273,6 +280,10 @@ class SurvONS():
 
     # Cálculo de concordance index
     def score(self, events, X, cens) -> float:
+
+        if not self.trained:
+            print("Train the model before doing predictions")
+            return
         
         preds = [self.predict_time(X[i]) for i in range(len(events))]
 
