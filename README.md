@@ -17,8 +17,14 @@ Una vez hecho esto, el modelo está listo para ser utilizado.
 
 ## Métodos
 
-```train(x, t0, tf, censored)```: Entrena el modelo en base a los parámetros entregados. 
+```train(x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool], diam: float = 1)```: Entrena el modelo en base a los parámetros entregados. 
+
+```iterative_train(x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool])```: Optimiza iterativamente los parámetros del modelo. No funciona si el modelo no ha sido entrenado. _Advertencia: puede tomar mucho tiempo en ejecutarse._
 
 ```predict(x: int, t: int, t0: int = 0)```: Entrega la probabilidad de que el individuo con características ``x`` sobreviva hasta el instante de tiempo ``t``. No funciona si el modelo no ha sido entrenado. Opcionalmente, se le puede dar un tiempo inicial en ```t0```.
 
+```predict_time(x: np.ndarray[float], t0: int = 0)```: Entrega el intervalo de tiempo en el que se estima que el individuo con características ``x`` experimente el evento.
+
 ```plot(indivs: list[np.ndarray[float]] | np.ndarray[float], t0: int, tf: int)```: Genera un gráfico de la probabilidad de superivencia de un grupo de individuos en el intervalo de tiempo entre ``t0`` y ``tf``. ``indivs`` es una lista de vectores de característica de los individuos que se quieren graficar, o es un vector de características en caso de que solo se quiera graficar la probabilidad de supervivencia de un individuo. No funciona si el modelo no ha sido entrenado.
+
+```score(events: np.ndarray, X: list[np.ndarray[float]], cens: np.ndarray[bool])```: Calcula el concordance index del modelo con los valores entregados. ``events`` es un arreglo que contiene los tiempos reales en los que ocurren los eventos, ``X`` es la matriz de características de los individuos que se usan para calcular el score, y ``cens`` es un arreglo que indica si el individuo fue censurado o no.
