@@ -23,7 +23,7 @@ x["tgrade"] = x["tgrade"].apply(lambda val: cancer_levels(val))
 
 X = x.to_numpy()
 
-a = [1,2,3,4,5,6,1,2]
+#a = [1,2,3,4,5,6,1,2]
 # print(get_censored_values(a, 4))
 
 
@@ -34,10 +34,10 @@ indivs = [X[i] for i in range(10)]
 surv.train(x, np.zeros((x.shape[0])), y["time"], y["cens"])
 print("Concordance index:",surv.score(y["time"], X, y["cens"]))
 
-# for i in range(10):
-#     print(f"Individuo {i}")
-#     print("Predicted time:", surv.predict_time(X[i]))
-#     print("Actual time:", y[i]["time"])
+for i in range(10):
+    print(f"Individuo {i}")
+    print("Predicted time:", surv.predict_time(X[i]))
+    print("Actual time:", y[i]["time"])
 
 # surv.plot(X[28], 0, 2500)
 # surv.plot(indivs, 0, 2500)

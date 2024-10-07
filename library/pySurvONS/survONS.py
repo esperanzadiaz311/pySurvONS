@@ -157,10 +157,13 @@ class SurvONS():
 
     def predict_time(self, x: np.ndarray[float], t0: int = 0) -> float:
         time = 0
+        probs = 0
         for t in range(t0, self.t_max + 1):
-            time += t*self.__hazard(x, t0, t)
+            p = self.__survive(x, t0, t)
+            time += t*p
+            probs += p
 
-        return time
+        return time/probs
 
 
     # Grafica la probabilidad de supervivencia de un grupo de
