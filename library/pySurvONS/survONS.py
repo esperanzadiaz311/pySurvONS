@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from utils import instgrad, generalized_projection
 from lifelines.utils import concordance_index
+from cvxpy import DCPError, SolverError
 
 # Implementación en Python de SurvONS
 
@@ -117,7 +118,7 @@ class SurvONS():
         return np.exp(-1 * np.exp(np.matmul(self.beta.T, xi)) * (t - t0))
 
     # Entrena el modelo de SurvONS a partir de un dataset
-    def train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
+    def train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool], diam: float = 1) -> None:
 
         X = x.to_numpy()
 
@@ -129,7 +130,7 @@ class SurvONS():
         gamma = np.arange(np.log(1/n_it), np.log(5*d), 1.2)
         gamma = np.exp(gamma)
 
-        D = 2.5
+        D = diam
         epsilon = 1/(gamma*D) ** 2
         R = [[] for _ in range(n_it)]
         for t in range(0, n_it):
@@ -139,10 +140,81 @@ class SurvONS():
             t2 = min(n_it,int(np.floor(tf[i])+1)) # tiempo en el que i sale del estudio
             for t in range(t1, t2):
                 R[t].append(i)
+        count = 0
+        while count < 10 and not self.trained:
+            try:
+                survons = self.__surv_ons(X, t0, tf, censored, D, gamma, n_it, epsilon, R)
+            except (DCPError, SolverError) as e:
+                D *= 2
+                epsilon = 1/(gamma*D) ** 2
+                print(f"Valor de D muy pequeño. Probando con D={D}")
+                count += 1
+            else:
+                self.beta = survons["beta_boa_arr"][n_it-1,:]
+                self.trained = True
+                self.D = D
+                print("Entrenamiento exitoso, para optimizar el modelo utilizar iterative_train")
+            
+        if count >= 10:
+            print("No se pudieron encontrar parámetros adecuados para el dataset entregado")
+    
+    def iterative_train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
-        survons = self.__surv_ons(X, t0, tf, censored, D, gamma, n_it, epsilon, R)
-        self.beta = survons["beta_boa_arr"][n_it-1,:]
-        self.trained = True
+        factors = [0.8, 0.9, 0.95]
+
+        X = x.to_numpy()
+
+        base_concordance = self.score(tf, X, censored)
+
+        N = X.shape[0] # Número de individuos
+        n_it = int(max(tf))
+        self.t_max = n_it
+        d = X.shape[1]
+
+        gamma = np.arange(np.log(1/n_it), np.log(5*d), 1.2)
+        gamma = np.exp(gamma)
+
+        R = [[] for _ in range(n_it)]
+        for t in range(0, n_it):
+            R[t].append(0)
+        for i in range(1, N):
+            t1 = max(1,int(np.floor(t0[i])-1)) # tiempo en el que i entra al estudio
+            t2 = min(n_it,int(np.floor(tf[i])+1)) # tiempo en el que i sale del estudio
+            for t in range(t1, t2):
+                R[t].append(i)
+
+        new_concordance = base_concordance
+        index = 0
+        while index < len(factors):
+            new_D = self.D * factors[index]
+            epsilon = 1/(gamma*new_D) ** 2
+            print(f"Probando D={new_D}")
+            try:
+                survons = self.__surv_ons(X, t0, tf, censored, new_D, gamma, n_it, epsilon, R)
+            except (DCPError, SolverError) as e:
+                index +=1
+                continue
+            else:
+                old_beta = self.beta
+                old_D = self.D
+                self.beta = survons["beta_boa_arr"][n_it-1,:]
+                self.D = new_D
+
+                new_concordance = self.score(tf, X, censored)
+                print(f"new_concordance: {new_concordance}")
+
+            if (new_concordance > base_concordance):
+                base_concordance = new_concordance
+                new_D *= factors[index]
+                continue
+            else:
+                self.beta = old_beta
+                self.D = old_D
+                index +=1
+                continue
+
+        print(f"Valor de D final: {self.D}")
+         
 
     # Probabilidad de supervivencia de un individuo
     # en un tiempo dado
