@@ -161,7 +161,7 @@ class SurvONS():
     def iterative_train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
         if not self.trained:
-            print("Train the model before doing predictions")
+            print("Entrene el modelo antes de hacer predicciones.")
             return
 
         factors = [0.8, 0.9, 0.95]
@@ -227,13 +227,13 @@ class SurvONS():
     #    probabilidad de supervivencia
     def predict(self, x: np.ndarray[float], t: int, t0: int = 0) -> float:
         if not self.trained:
-            print("Train the model before doing predictions")
+            print("Entrene el modelo antes de hacer predicciones.")
             return
         return self.__survive(x, t0, t)
 
     def predict_time(self, x: np.ndarray[float], t0: int = 0) -> float:
         if not self.trained:
-            print("Train the model before doing predictions")
+            print("Entrene el modelo antes de hacer predicciones.")
             return
         time = 0
         probs = 0
@@ -254,7 +254,7 @@ class SurvONS():
     # tf: tiempo final
     def plot(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: int, tf: int) -> None:
         if not self.trained:
-            print("Train the model before doing predictions")
+            print("Entrene el modelo antes de hacer predicciones.")
             return
         
         if len(indivs) == 0:
@@ -279,10 +279,10 @@ class SurvONS():
         plt.show()
 
     # Cálculo de concordance index
-    def score(self, events, X, cens) -> float:
+    def score(self, events: np.ndarray, X: list[np.ndarray[float]], cens: np.ndarray[bool]) -> float:
 
         if not self.trained:
-            print("Train the model before doing predictions")
+            print("Entrene el modelo antes de hacer predicciones.")
             return
         
         preds = [self.predict_time(X[i]) for i in range(len(events))]
