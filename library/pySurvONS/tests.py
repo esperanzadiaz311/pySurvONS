@@ -26,9 +26,9 @@ surv = SurvONS()
 
 indivs = [X[i] for i in range(10)]
 
-surv.train(x, np.zeros((x.shape[0])), y["time"], y["cens"], diam=1.25)
-print("Concordance index:",surv.score(y["time"], X, y["cens"]))
-surv.iterative_train(x, np.zeros((x.shape[0])), y["time"], y["cens"])
+# surv.train(x, np.zeros((x.shape[0])), y["time"], y["cens"], diam=1.25)
+# print("Concordance index:",surv.score(y["time"], X, y["cens"]))
+# surv.iterative_train(x, np.zeros((x.shape[0])), y["time"], y["cens"])
 
 # for i in range(10):
 #     print(f"Individuo {i}")
@@ -36,3 +36,6 @@ surv.iterative_train(x, np.zeros((x.shape[0])), y["time"], y["cens"])
 #     print("Actual time:", y[i]["time"])
 
 surv.plot(indivs, 0, 2500)
+
+dates = ["2024-01-01", "2023-01-01"]
+print(date_discretization(dates, depth="year"))
