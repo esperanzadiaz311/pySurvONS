@@ -49,7 +49,7 @@ class SurvONS():
         gamma_temp = np.zeros((n, 1))
 
         for t in range(1, n): # la iteración 0 da todo 0 => mata todo
-            #print(f"iteracion {t}")
+            print(f"iteracion {t}")
             beta_boa = np.matmul(beta, pi_boa)
             grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, tf, censored, X, beta_boa, R[t])
 
@@ -94,6 +94,7 @@ class SurvONS():
 
             if(t < n):
                 beta_boa_arr[t] = (np.matmul(beta, pi_boa)).flatten()
+                #print("beta_boa_arr[t]:", beta_boa_arr[t])
                 pi_boa_arr[t] = pi_boa.flatten()
         
         return {"beta_arr": beta_arr, "beta_boa_arr": beta_boa_arr, "pi_boa_arr": pi_boa_arr, 
@@ -209,7 +210,6 @@ class SurvONS():
 
             if (new_concordance > base_concordance):
                 base_concordance = new_concordance
-                new_D *= factors[index]
                 continue
             else:
                 self.beta = old_beta
@@ -242,7 +242,7 @@ class SurvONS():
             time += t*p
             probs += p
 
-        return time/probs
+        return time#/probs
 
 
     # Grafica la probabilidad de supervivencia de un grupo de
