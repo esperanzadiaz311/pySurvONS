@@ -242,7 +242,7 @@ class SurvONS():
             time += t*p
             probs += p
 
-        return time#/probs
+        return time/probs
 
 
     # Grafica la probabilidad de supervivencia de un grupo de
