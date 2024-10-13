@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from utils import instgrad, generalized_projection
+from .utils import instgrad, generalized_projection
 from lifelines.utils import concordance_index
 from cvxpy import DCPError, SolverError
 
