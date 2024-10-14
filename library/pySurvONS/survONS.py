@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from .utils import instgrad, generalized_projection
+from utils import instgrad, generalized_projection
 from lifelines.utils import concordance_index
 from cvxpy import DCPError, SolverError
 
@@ -117,6 +117,12 @@ class SurvONS():
         if (t < t0):
             return 1
         return np.exp(-1 * np.exp(np.matmul(self.beta.T, xi)) * (t - t0))
+    
+    def __check_trained(self):
+        if not self.trained:
+            print("Entrene el modelo antes de hacer predicciones.")
+            return False
+        return True
 
     # Entrena el modelo de SurvONS a partir de un dataset
     def train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool], diam: float = 1) -> None:
@@ -161,8 +167,7 @@ class SurvONS():
     
     def iterative_train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
-        if not self.trained:
-            print("Entrene el modelo antes de hacer predicciones.")
+        if not self.__check_trained():
             return
 
         factors = [0.8, 0.9, 0.95]
@@ -222,29 +227,71 @@ class SurvONS():
 
     # Probabilidad de supervivencia de un individuo
     # en un tiempo dado
-    # i: individuo a predecir
+    # indivs: individuo a predecir o listado de individuos a predecir
     # t: tiempo en el que se quiere ver la 
     #    probabilidad de supervivencia
-    def predict(self, x: np.ndarray[float], t: int, t0: int = 0) -> float:
-        if not self.trained:
-            print("Entrene el modelo antes de hacer predicciones.")
+    # t0: tiempo inicial de individuo o listado de tiempos iniciales
+    #     de cada individuo 
+    
+    def predict(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t: int, t0: np.ndarray[float] | int = 0) -> float:
+        if not self.__check_trained():
             return
-        return self.__survive(x, t0, t)
 
-    def predict_time(self, x: np.ndarray[float], t0: int = 0) -> float:
-        if not self.trained:
-            print("Entrene el modelo antes de hacer predicciones.")
+        if len(indivs) == 0:
             return
-        time = 0
-        probs = 0
-        for t in range(t0, self.t_max + 1):
-            p = self.__survive(x, t0, t)
-            time += t*p
-            probs += p
+       
+        if isinstance(indivs[0], (np.floating, float)):
+            return self.__survive(indivs, t0, t)
 
-        return time/probs
+        else:
+            prob = []
+            for i in range(len(indivs)):
+                if type(t0) == int:
+                    prob.append(self.__survive(indivs[i], t0, t))
+                else:
+                    prob.append(self.__survive(indivs[i], t0[i], t))
+            return prob
+        
+    # Tiempo estimado en el que un individuo(s) experimentará(n) el 
+    # indivs: individuo a predecir o listado de individuos a predecir
+    # t0: tiempo inicial de individuo o listado de tiempos iniciales
+    #     de cada individuo 
+    def predict_time(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: np.ndarray[float] | int = 0) -> float:
+        if not self.__check_trained():
+            return
 
+        if len(indivs) == 0:
+            return
+       
+        if isinstance(indivs[0], (np.floating, float)):
+            time = 0
+            probs = 0
+            for t in range(t0, self.t_max + 1):
+                p = self.__survive(indivs, t0, t)
+                time += t*p
+                probs += p
 
+            return time/probs
+        else:
+            predicts = []
+            for i in range(len(indivs)):
+                time = 0
+                probs = 0
+                if type(t0) == int:
+                    for t in range(t0, self.t_max + 1):
+                        p = self.__survive(indivs[i], t0, t)
+                        time += t*p
+                        probs += p
+                else:
+                    for t in range(t0[i], self.t_max + 1):
+                        p = self.__survive(indivs[i], t0[i], t)
+                        time += t*p
+                        probs += p
+
+                predicts.append(time/probs)
+            return predicts
+
+        
     # Grafica la probabilidad de supervivencia de un grupo de
     # individuos en un intervalo de tiempo
     # indivs: matriz de características de los individuos
@@ -253,8 +300,7 @@ class SurvONS():
     # t0: tiempo inicial
     # tf: tiempo final
     def plot(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: int, tf: int) -> None:
-        if not self.trained:
-            print("Entrene el modelo antes de hacer predicciones.")
+        if not self.__check_trained():
             return
         
         if len(indivs) == 0:
@@ -280,9 +326,7 @@ class SurvONS():
 
     # Cálculo de concordance index
     def score(self, events: np.ndarray, X: list[np.ndarray[float]], cens: np.ndarray[bool]) -> float:
-
-        if not self.trained:
-            print("Entrene el modelo antes de hacer predicciones.")
+        if not self.__check_trained():
             return
         
         preds = [self.predict_time(X[i]) for i in range(len(events))]
