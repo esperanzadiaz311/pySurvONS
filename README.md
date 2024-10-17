@@ -2,6 +2,10 @@
 
 Librería que implementa el método de análisis de supervivencia SurvONS. Se trabajó con las librerías numpy (``np``), cvxpy (``cp``), matlplotlib (``plt``) y pandas (``pd``).
 
+## Consideraciones
+
+**Este modelo es altamente experimental y no se puede trabajar con cualquier dataset, debido a las operaciones matemáticas que hace el modelo por detrás. Para aumentar la probabilidad de éxito, los valores del dataset deben ser numéricos y su magnitud no debe exceder el valor 100.**
+
 ## Cómo utilizar
 
 Para utilizar SurvONS, se debe inicializar de la siguiente forma
