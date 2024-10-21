@@ -49,7 +49,7 @@ class SurvONS():
         gamma_temp = np.zeros((n, 1))
 
         for t in range(1, n): # la iteración 0 da todo 0 => mata todo
-            print(f"iteracion {t}")
+            #print(f"iteracion {t}")
             beta_boa = np.matmul(beta, pi_boa)
             grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, tf, censored, X, beta_boa, R[t])
 
