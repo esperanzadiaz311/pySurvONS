@@ -1,5 +1,6 @@
 import numpy as np
 import cvxpy as cp
+import pandas as pd
 
 # Función auxiliar que retorna el Likelihood, Gradiente y Hessiano 
 
@@ -53,3 +54,38 @@ def generalized_projection(P, theta, D, d):
     #print("x.value", x.value)
     return x.value
 
+def date_discretization(dates, depth="day") -> np.ndarray[int]:
+    
+    dates_to_datetime = pd.to_datetime(dates)
+    depth_map = {
+        "day": dates_to_datetime.date,  # Fecha completa (sin hora)
+        "month": dates_to_datetime.to_period('M'),  # Solo mes y año
+        "year": dates_to_datetime.year,  # Solo el año
+    }
+
+    if depth not in depth_map:
+        raise ValueError(f"Discretización no encontrada. Solo se soporta 'day', 'month' y 'year'")
+
+    # Ordenar las fechas sin repetir
+    sorted_dates = np.unique(depth_map[depth])
+
+    # Crear un índice secuencial, empezando desde 0
+    date_to_discrete = {date: i for i, date in enumerate(sorted_dates)}
+
+    # Aplicar el mapeo a la lista original de fecha
+    discretized_dates = np.ndarray((len(dates), ), dtype=int)
+    
+    for i in range(len(dates_to_datetime)):
+        discretized_dates[i] = date_to_discrete[depth_map[depth][i]]
+
+    return discretized_dates
+
+def get_censored_values(values, max_value) -> np.ndarray[bool]:
+    
+    cens = np.ndarray((len(values),), dtype=bool)
+
+    for i in range(len(values)):
+        leq = (values[i] < max_value)
+        cens[i] = leq
+
+    return cens
