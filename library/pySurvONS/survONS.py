@@ -49,7 +49,6 @@ class SurvONS():
         gamma_temp = np.zeros((n, 1))
 
         for t in range(1, n): # la iteración 0 da todo 0 => mata todo
-            #print(f"iteracion {t}")
             beta_boa = np.matmul(beta, pi_boa)
             grad_boa[t], hess_boa , lik_boa[t] = instgrad(t, t0, tf, censored, X, beta_boa, R[t])
 
@@ -118,6 +117,7 @@ class SurvONS():
             return 1
         return np.exp(-1 * np.exp(np.matmul(self.beta.T, xi)) * (t - t0))
     
+    # Verifica si un modelo fue entrenado
     def __check_trained(self):
         if not self.trained:
             print("Entrene el modelo antes de hacer predicciones.")
@@ -125,8 +125,13 @@ class SurvONS():
         return True
 
     # Entrena el modelo de SurvONS a partir de un dataset
+    # x: Dataset con las características de cada individuo
+    # t0: Arreglo de tiempos iniciales de cada individuo
+    # tf: Arreglo de tiempos finales de cada individuo 
+    # censored: Vector de booleanos que indica si un individuo fue censurado
+    # diam: Diametro máximo del espacio de características del dataset
     def train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool], diam: float = 1) -> None:
-
+        
         X = x.to_numpy()
 
         N = X.shape[0] # Número de individuos
@@ -165,6 +170,11 @@ class SurvONS():
         if count >= 10:
             print("No se pudieron encontrar parámetros adecuados para el dataset entregado")
     
+    # Optimiza los parámetros de un modelo ya entrenado
+    # x: Dataset con las características de cada individuo
+    # t0: Arreglo de tiempos iniciales de cada individuo
+    # tf: Arreglo de tiempos finales de cada individuo 
+    # censored: Vector de booleanos que indica si un individuo fue censurado
     def iterative_train(self, x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool]) -> None:
 
         if not self.__check_trained():
@@ -233,7 +243,7 @@ class SurvONS():
     # t0: tiempo inicial de individuo o listado de tiempos iniciales
     #     de cada individuo 
     
-    def predict(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t: int, t0: np.ndarray[float] | int = 0) -> float:
+    def predict(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t: int, t0: np.ndarray[float] | int = 0) -> float | None:
         if not self.__check_trained():
             return
 
@@ -256,7 +266,7 @@ class SurvONS():
     # indivs: individuo a predecir o listado de individuos a predecir
     # t0: tiempo inicial de individuo o listado de tiempos iniciales
     #     de cada individuo 
-    def predict_time(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: np.ndarray[float] | int = 0) -> float:
+    def predict_time(self, indivs: list[np.ndarray[float]] | np.ndarray[float], t0: np.ndarray[float] | int = 0) -> float | None:
         if not self.__check_trained():
             return
 
@@ -321,12 +331,20 @@ class SurvONS():
         plt.title("Tiempo v/s Probabilidad de Supervivencia")
         plt.xlabel("Tiempo")
         plt.ylabel("Probabilidad de Supervivencia")
-        #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.show()
 
-    # Cálculo de concordance index
-    def score(self, events: np.ndarray, X: list[np.ndarray[float]], cens: np.ndarray[bool]) -> float:
+    # Cálcula el concordance index del modelo con los datos entregados
+    # events: arreglo con los valores reales del tiempo en el que cada individuo experimenta el evento
+    # X: matriz con las características de los individuos
+    # cens: vector de booleanos que indica si un individuo fue censurado
+    def score(self, events: np.ndarray, X: list[np.ndarray[float]], cens: np.ndarray[bool]) -> float | None:
         if not self.__check_trained():
+            return
+        
+        if (len(events) == 0 or len(X) == 0 or len(cens) == 0):
+            return
+        
+        if (len(events) != len(X) or len(events) != len(cens) or len(cens) != len(X)):
             return
         
         preds = [self.predict_time(X[i]) for i in range(len(events))]
