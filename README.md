@@ -19,8 +19,6 @@ donde ``x`` es un DataFrame con los vectores de características de cada uno de 
 
 Una vez hecho esto, el modelo está listo para ser utilizado.
 
-Un ejemplo de utilización se encuentra en el archivo tests.py.
-
 ## Métodos
 
 ``train(x: pd.DataFrame, t0: np.ndarray, tf: np.ndarray, censored: np.ndarray[bool], diam: float = 1)``: Entrena el modelo en base a los parámetros entregados.
@@ -110,3 +108,12 @@ surv.plot(X[256], 600, 2000)
 # cens: Arreglo de numpy que indica que individuos están censurados de booleanos de la forma [True, False, True, False, False ...]
 surv.score(tf, x.to_numpy(), cens)
 ```
+## Testing
+
+Todos los métodos fueron probados usando unittest sobre el dataset GBSG2 de la librería sksurv. Estos tests se pueden encontrar en el archivo tests.py, y se pueden ejecutar con el comando:
+
+```python -m unittest library/pySurvONS/tests.py```
+
+## Agradecimientos
+
+Este trabajo fue posible gracias a la Doctora Camila Fernandez, quien diseñó y realizó la primera implementación de este algoritmo.
