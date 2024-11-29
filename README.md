@@ -117,3 +117,5 @@ Todos los métodos fueron probados usando unittest sobre el dataset GBSG2 de la 
 ## Agradecimientos
 
 Este trabajo fue posible gracias a la Doctora Camila Fernandez, quien diseñó y realizó la primera implementación de este algoritmo.
+
+Esta implementación fue realizada por Esperanza Díaz, Diego García y Paloma Silva para el curso Proyecto de Software primavera 2024.
